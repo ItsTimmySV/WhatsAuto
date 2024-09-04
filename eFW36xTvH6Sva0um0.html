@@ -1,0 +1,188 @@
+<html><head><base href="https://app.recordatorios-whatsapp.com/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recordatorios WhatsApp</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #DCF8C6;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    max-width: 600px;
+    width: 100%;
+  }
+  h1, h2 {
+    color: #128C7E;
+    text-align: center;
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    margin-top: 10px;
+    color: #075E54;
+  }
+  input, textarea {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #25D366;
+    border-radius: 5px;
+  }
+  button {
+    background-color: #25D366;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #128C7E;
+  }
+  #status {
+    margin-top: 20px;
+    text-align: center;
+    font-weight: bold;
+  }
+  #reminderList {
+    margin-top: 30px;
+    border-top: 2px solid #128C7E;
+    padding-top: 20px;
+  }
+  .reminder {
+    background-color: #ECE5DD;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .reminder button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #FF4136;
+    font-size: 12px;
+    padding: 5px;
+  }
+  .reminder p {
+    margin: 5px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Recordatorios WhatsApp</h1>
+    <form id="reminderForm">
+      <label for="phone">Número de teléfono (con código de país):</label>
+      <input type="tel" id="phone" required placeholder="Ej: +34612345678">
+      
+      <label for="message">Mensaje del recordatorio:</label>
+      <textarea id="message" required placeholder="Escribe tu mensaje aquí"></textarea>
+      
+      <label for="date">Fecha del recordatorio:</label>
+      <input type="date" id="date" required>
+      
+      <label for="time">Hora del recordatorio:</label>
+      <input type="time" id="time" required>
+      
+      <button type="submit">Programar Recordatorio</button>
+    </form>
+    <div id="status"></div>
+
+    <div id="reminderList">
+      <h2>Lista de Recordatorios</h2>
+      <!-- Los recordatorios se agregarán aquí dinámicamente -->
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script>
+    let reminders = [];
+
+    function updateReminderList() {
+      const reminderListElement = document.getElementById('reminderList');
+      reminderListElement.innerHTML = '<h2>Lista de Recordatorios</h2>';
+      
+      reminders.forEach((reminder, index) => {
+        const reminderElement = document.createElement('div');
+        reminderElement.className = 'reminder';
+        reminderElement.innerHTML = `
+          <p><strong>Teléfono:</strong> ${reminder.phone}</p>
+          <p><strong>Mensaje:</strong> ${reminder.message}</p>
+          <p><strong>Fecha y Hora:</strong> ${reminder.dateTime.format('DD/MM/YYYY HH:mm')}</p>
+          <button onclick="deleteReminder(${index})">Eliminar</button>
+        `;
+        reminderListElement.appendChild(reminderElement);
+      });
+    }
+
+    function deleteReminder(index) {
+      reminders.splice(index, 1);
+      updateReminderList();
+    }
+
+    document.getElementById('reminderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const phone = document.getElementById('phone').value;
+      const message = document.getElementById('message').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      
+      const reminderDateTime = moment(`${date} ${time}`);
+      const now = moment();
+      
+      if (reminderDateTime.isBefore(now)) {
+        document.getElementById('status').textContent = 'Error: La fecha y hora del recordatorio deben ser en el futuro.';
+        return;
+      }
+      
+      // Agregar el recordatorio a la lista
+      reminders.push({
+        phone,
+        message,
+        dateTime: reminderDateTime
+      });
+      
+      updateReminderList();
+      
+      document.getElementById('status').textContent = 'Recordatorio programado con éxito.';
+      
+      // Simular el envío del recordatorio
+      const delay = reminderDateTime.diff(now);
+      
+      setTimeout(() => {
+        console.log(`Enviando recordatorio a ${phone}: ${message}`);
+        document.getElementById('status').textContent = 'Recordatorio enviado.';
+        
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Eliminar el recordatorio enviado de la lista
+        const index = reminders.findIndex(r => r.phone === phone && r.message === message);
+        if (index !== -1) {
+          deleteReminder(index);
+        }
+      }, delay);
+      
+      // Limpiar el formulario
+      this.reset();
+    });
+
+    // Inicializar la lista de recordatorios
+    updateReminderList();
+  </script>
+</body>
+</html>
